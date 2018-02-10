@@ -48,7 +48,7 @@ class QuoteCalculationEngine:
     @staticmethod
     def calculate_quote_price(sec_id, ref_price, is_buy, qty):
         # XXX meaningless dummy calculation involving all 4 arguments
-        return (ref_price + sec_id) + (0.5 if is_buy else -0.5) + float('0.00%d' % qty)
+        return (ref_price + sec_id) + (0.5 if not is_buy else -0.5) + float('0.00%d' % qty)
 
 
 class ReferencePriceSource(threading.Thread):
