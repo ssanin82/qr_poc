@@ -9,7 +9,8 @@
 
 ## Assumptions and Simplifications
 * We have a fixed number of securities with their ids ranging from 0 to 99
-* Even though Python has problems with native threading (because of the GIL mechanism), for simplicity we'll use Python thread here anyway. Defeinitely, should this be written in Java or C++, similar architecture wouldn't have this issue.
+* Even though Python has problems with native threading (because of the GIL mechanism), for simplicity we'll use Python thread here anyway. Definitely, should this be written in Java or C++, similar architecture would not have this issue.
+* Dummy price feed: TODO
 * Dummy price calculation: TODO
 
 ## TODO
