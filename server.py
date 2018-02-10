@@ -5,7 +5,7 @@ import threading
 
 logging.basicConfig(format='%(name)s %(asctime)-15s %(message)s')
 server_host, server_port = 'localhost', 50000
-SECURITY_IDS = range(100)
+MAX_SECURITY_ID = 100
 
 
 class ReferencePriceSourceListener:
@@ -16,64 +16,69 @@ class ReferencePriceSourceListener:
         pass  # nothing here, just forces the child class to always implement this method
 
 
-class QuoteCalculationEngine(ReferencePriceSourceListener, threading.Thread):
-    def __init__(self, price_src):
-        threading.Thread.__init__(self)
-        price_src.subscribe(self)
-        self.do_stop = False
-        # TODO calculated price storage
+class PriceStore(ReferencePriceSourceListener):
+    def __init__(self):
+        self.prices = [100] * MAX_SECURITY_ID
+        self.lock = threading.Lock()
 
-    def calculate_quote_price(self, security_id, reference_price, buy, quantity):
-        pass  # TODO return from price storage
+    @staticmethod
+    def _validate(security_id):
+        assert 0 <= security_id < MAX_SECURITY_ID
+
+    def get(self, security_id):
+        self._validate(security_id)
+        with self.lock:
+            return self.prices[security_id]
+
+    def set(self, security_id, price):
+        self._validate(security_id)
+        with self.lock:
+            self.prices[security_id] = price
 
     def reference_price_changed(self, security_id, price):
-        pass  # TODO
+        self.set(security_id, price)
 
-    def stop(self):
-        self.do_stop = True
 
-    def run(self):
-        while not self.do_stop:
-            pass  # TODO do something
+class QuoteCalculationEngine:
+    @staticmethod
+    def calculate_quote_price(security_id, reference_price, buy, quantity):
+        pass  # TODO some long running calculation
 
 
 class ReferencePriceSource(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
         self.listeners = list()
-        self.prices = {i: 100 for i in SECURITY_IDS}
         self.do_stop = False
 
     def subscribe(self, listener):
         self.listeners.append(listener)
-
-    def get(self, security_id):
-        assert security_id in SECURITY_IDS
-        return self.prices[security_id]
 
     def stop(self):
         self.do_stop = True
 
     def run(self):
         # XXX dummy price feed
-        sec_id = 0
+        sec_id, price = 100
         while not self.do_stop:
-            self.prices[sec_id] = (self.prices[sec_id] + 1) if self.prices[sec_id] < 200 else 100
+            price += 1
+            if 200 == price:
+                price = 100
             for listener in self.listeners:
-                listener.reference_price_changed(sec_id, self.prices[sec_id])
+                listener.reference_price_changed(sec_id, price)
             sec_id += 1
-            sec_id %= 100
+            sec_id %= MAX_SECURITY_ID
 
 
 def main():
     log = logging.getLogger('SERVER')
     log.setLevel(logging.DEBUG)
 
+    price_store = PriceStore()
     price_src = ReferencePriceSource()
-    price_src.start()
 
-    calc_engine = QuoteCalculationEngine(price_src)
-    calc_engine.start()
+    price_src.subscribe(price_store)
+    price_src.start()
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -81,7 +86,7 @@ def main():
     s.bind((server_host, server_port))
     s.listen(1)
     conn, addr = s.accept()
-    while 1:
+    while True:
         data = conn.recv(1024)
         if not data:
             break
@@ -90,14 +95,13 @@ def main():
         if 'STOP' == str_data:
             log.info('Stopping...')
             break
-        # TODO send response
-        conn.sendall(data)
+        words = str_data.split()
+        sec_id, is_buy, qty = int(words[0]), 'BUY' == words[1], int(words[2])
+        conn.sendall(str(QuoteCalculationEngine.calculate_quote_price(
+            sec_id, price_store.get(sec_id), is_buy, qty)).encode())
     conn.close()
-
     price_src.stop()
     price_src.join()
-    calc_engine.stop()
-    calc_engine.join()
 
 
 if "__main__" == __name__:
