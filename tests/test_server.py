@@ -39,7 +39,7 @@ class TestClient:
 
     def stop_server(self):
         self.log.info('Stopping the server...')
-        self.conn.sendall('STOP'.encode())
+        self.conn.sendall('STOP_SERVER'.encode())
 
 
 class TestServer(unittest.TestCase):
@@ -52,10 +52,12 @@ class TestServer(unittest.TestCase):
             c.stop_server()
         self.assertEqual(0, self.server.wait())
 
-    def test_simple1(self):
+    def test_reply_is_float(self):
         with TestClient() as c:
-            res = c.get(1, True, 3)
-            self.assertEqual('1 BUY 3', res)
+            try:
+                _ = float(c.get(1, True, 345))
+            except ValueError:
+                self.fail('Result is not float')
 
 
 if '__main__' == __name__:
