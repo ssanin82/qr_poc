@@ -1,3 +1,5 @@
+import time
+
 
 class QuoteCalculationEngine:
     def calculate_quote_price(self, security_id, reference_price, buy, quantity):
@@ -18,4 +20,6 @@ class ReferencePriceSourceListener:
 
 
 if "__main__" == __name__:
-    pass  # TODO
+    while True:
+        print(123)
+        time.sleep(1)
