@@ -9,7 +9,8 @@ server_host, server_port = 'localhost', 50000
 MAX_SECURITY_ID = 100
 THREAD_POOL_SIZE = 128
 log = logging.getLogger('SERVER')
-log.setLevel(logging.DEBUG)
+# log.setLevel(logging.DEBUG)
+log.setLevel(logging.CRITICAL)
 
 
 class ReferencePriceSourceListener:

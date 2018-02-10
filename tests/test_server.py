@@ -4,6 +4,8 @@ import sys
 import socket
 import time
 import logging
+from concurrent.futures import ThreadPoolExecutor
+import random
 
 logging.basicConfig(format='%(name)s %(asctime)-15s %(message)s')
 server_host, server_port = 'localhost', 50000
@@ -12,7 +14,8 @@ server_host, server_port = 'localhost', 50000
 class TestClient:
     def __init__(self):
         self.log = logging.getLogger('CLIENT')
-        self.log.setLevel(logging.DEBUG)
+        # self.log.setLevel(logging.DEBUG)
+        self.log.setLevel(logging.CRITICAL)
         self.conn = None
 
     def connect(self):
@@ -59,8 +62,24 @@ class TestServer(unittest.TestCase):
             except ValueError:
                 self.fail('Result is not float')
 
+    def test_reply_many(self):
+        num_clients = 20
+        clients = list()
+        for _ in range(num_clients):
+            c = TestClient()
+            c.connect()
+            clients.append(c)
+
+        # request concurrently
+        with ThreadPoolExecutor(max_workers=num_clients) as executor:
+            futures = [executor.submit(clients[i].get, i % 100, 0 == (i % 2), random.randint(100, 500))
+                       for i in range(num_clients)]
+            for i in range(num_clients):
+                self.assertTrue(99. <= float(futures[i].result()) <= 301.)
+
+        for i in range(num_clients):
+            clients[i].close()
+
 
 if '__main__' == __name__:
     unittest.main()
-
-# TODO coverage
