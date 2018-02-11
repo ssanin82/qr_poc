@@ -31,7 +31,7 @@ class TestClient:
         self.conn.sendall('STOP_SERVER'.encode())
 
 
-if '__main__' == __name__:
+def main():
     server = subprocess.Popen(['python', 'server.py'], stdout=sys.stdout, stderr=sys.stdout)
     time.sleep(0.1)
 
@@ -42,3 +42,7 @@ if '__main__' == __name__:
             print('security: %d, qty: %d, bid: %f, ask: %f' % (i, qty, bid, ask))
         c.stop_server()
     server.wait()
+
+
+if '__main__' == __name__:
+    main()
