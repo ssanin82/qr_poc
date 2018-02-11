@@ -58,7 +58,7 @@ class TestServer(unittest.TestCase):
     def test_reply_is_float(self):
         with TestClient() as c:
             try:
-                _ = float(c.get(1, True, 345))
+                self.assertTrue(99. <= float(c.get(1, True, 345)) <= 301.)
             except ValueError:
                 self.fail('Result is not float')
 
